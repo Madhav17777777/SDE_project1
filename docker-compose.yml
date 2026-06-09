@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -13,13 +12,34 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
-
   redis:
     image: redis:7-alpine
     container_name: collab_editor_redis
     ports:
       - "6379:6379"
     restart: unless-stopped
-
+  server:
+    build: ./server
+    container_name: collab_editor_server
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - DATABASE_URL=postgresql://postgres:postgres_password@postgres:5432/collab_editor
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=super_secret_key_change_me_in_production
+      # - JUDGE0_API_KEY=YOUR_KEY
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+  client:
+    build: ./client
+    container_name: collab_editor_client
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    restart: unless-stopped
 volumes:
   postgres_data:
