@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-950 text-slate-100 antialiased font-sans selection:bg-indigo-500/30 selection:text-white;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-950;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-dark-800 rounded hover:bg-dark-700 transition-colors;
+}
+
+/* Collaborative Cursor Widget for Monaco Editor */
+.remote-cursor {
+  position: absolute;
+  width: 2px;
+  height: 19px;
+  z-index: 10;
+  animation: cursor-blink 1s infinite;
+}
+
+.remote-cursor-label {
+  position: absolute;
+  top: -18px;
+  left: 0;
+  white-space: nowrap;
+  font-family: 'Outfit', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px 3px 3px 0;
+  color: white;
+  z-index: 11;
+  pointer-events: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Show the label when cursor moves or editor is hovered (controlled via CSS class) */
+.remote-cursor:hover .remote-cursor-label,
+.remote-cursor.active .remote-cursor-label {
+  opacity: 1;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Monaco Custom Selection highlight */
+.remote-selection {
+  position: absolute;
+  opacity: 0.25;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Custom Glassmorphism utility */
+.glass {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
