@@ -11,9 +11,13 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
+const CLIENT_URL = process.env.CLIENT_URL || '*';
+const corsOrigin = CLIENT_URL === '*' ? true : CLIENT_URL;
+
 const io = new Server(server, {
   cors: {
-    origin: '*', // Adjust to specific frontend URL in production if needed
+    origin: corsOrigin,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -22,7 +26,10 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 4000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: corsOrigin,
+  credentials: true,
+}));
 app.use(express.json());
 
 // Routes

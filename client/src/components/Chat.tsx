@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Socket } from 'socket.io-client';
 import { Send, MessageSquare } from 'lucide-react';
+import { API_URL } from '../api';
 
 interface ChatMessage {
   id?: number;
@@ -27,7 +28,7 @@ export const Chat: React.FC<ChatProps> = ({ socket, roomId, currentUser }) => {
     const fetchChatLogs = async () => {
       try {
         const token = localStorage.getItem('collab_token');
-        const response = await fetch(`/api/rooms/${roomId}/messages`, {
+        const response = await fetch(`${API_URL}/api/rooms/${roomId}/messages`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

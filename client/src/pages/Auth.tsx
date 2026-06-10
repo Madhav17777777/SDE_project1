@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, User, Code2, AlertCircle } from 'lucide-react';
+import { API_URL } from '../api';
 
 export const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,7 +25,7 @@ export const Auth: React.FC = () => {
     setError('');
     setLoading(true);
 
-    const url = isLogin ? '/api/auth/login' : '/api/auth/signup';
+    const url = isLogin ? `${API_URL}/api/auth/login` : `${API_URL}/api/auth/signup`;
     const payload = isLogin 
       ? { usernameOrEmail: email || username, password } 
       : { username, email, password };

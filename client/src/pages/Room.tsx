@@ -7,6 +7,7 @@ import { Chat } from '../components/Chat';
 import { RoomHeader } from '../components/RoomHeader';
 import { ConnectionBanner } from '../components/ConnectionBanner';
 import { Terminal, AlertCircle, Play, Server, Clock, HardDrive } from 'lucide-react';
+import { API_URL } from '../api';
 
 interface ActiveUser {
   socketId: string;
@@ -63,7 +64,7 @@ export const Room: React.FC = () => {
 
   const fetchRoomDetails = async (id: string, token: string) => {
     try {
-      const response = await fetch(`/api/rooms/${id}`, {
+      const response = await fetch(`${API_URL}/api/rooms/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -92,7 +93,7 @@ export const Room: React.FC = () => {
     }
 
     // Connect WebSocket
-    const socket = io(window.location.origin === 'http://localhost:5173' ? 'http://localhost:4000' : window.location.origin, {
+    const socket = io(API_URL || window.location.origin, {
       auth: { token },
       reconnection: true,
       reconnectionAttempts: 15,
@@ -145,7 +146,7 @@ export const Room: React.FC = () => {
 
     try {
       const token = localStorage.getItem('collab_token');
-      const response = await fetch('/api/run-code', {
+      const response = await fetch(`${API_URL}/api/run-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

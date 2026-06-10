@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, LogOut, Code, User, Keyboard, Hash, Calendar, ArrowRight, AlertCircle } from 'lucide-react';
+import { API_URL } from '../api';
 
 interface Room {
   id: string;
@@ -35,7 +36,7 @@ export const Dashboard: React.FC = () => {
 
   const fetchRooms = async (token: string) => {
     try {
-      const response = await fetch('/api/rooms', {
+      const response = await fetch(`${API_URL}/api/rooms`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -59,7 +60,7 @@ export const Dashboard: React.FC = () => {
     setCreating(true);
     try {
       const token = localStorage.getItem('collab_token');
-      const response = await fetch('/api/rooms', {
+      const response = await fetch(`${API_URL}/api/rooms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
