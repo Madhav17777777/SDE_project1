@@ -3,12 +3,12 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABASE_SSL === 'true';
 const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres_password@localhost:5432/collab_editor';
 
 export const pool = new Pool({
   connectionString,
-  // If running in docker, we might have slightly different configs.
-  // We can add ssl config if process.env.NODE_ENV === 'production' if required.
+  ssl: isProduction ? { rejectUnauthorized: false } : undefined,
 });
 
 export async function initDb() {

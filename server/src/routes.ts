@@ -166,9 +166,57 @@ router.get('/rooms/:roomId/messages', authenticateToken, async (req: Authenticat
   }
 });
 
-// --- CODE RUNNER PROXY (JUDGE0) ---
+// --- CODE RUNNER PROXY (JUDGE0 & PISTON FALLBACK) ---
 
 const decodeBase64 = (str?: string) => str ? Buffer.from(str, 'base64').toString('utf-8') : '';
+
+async function runCodeWithPiston(code: string, language: string, stdin?: string) {
+  let lang = language.toLowerCase();
+  if (lang === 'js') lang = 'javascript';
+  if (lang === 'py') lang = 'python';
+  if (lang === 'c++') lang = 'cpp';
+
+  console.log(`Running code execution fallback via Piston API for language: ${lang}`);
+  
+  const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      language: lang,
+      version: '*',
+      files: [
+        {
+          content: code,
+        },
+      ],
+      stdin: stdin || '',
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Piston compiler returned error: ${await response.text()}`);
+  }
+
+  const data = (await response.json()) as any;
+  const stdout = data.run.stdout || '';
+  const stderr = data.run.stderr || '';
+  const outputMsg = data.run.output || '';
+  
+  return {
+    stdout: stdout,
+    stderr: stderr,
+    compile_output: '',
+    message: outputMsg,
+    status: {
+      id: data.run.code === 0 ? 3 : 11, // 3: Accepted, 11: Runtime Error
+      description: data.run.code === 0 ? 'Accepted' : 'Runtime Error',
+    },
+    time: undefined,
+    memory: undefined,
+  };
+}
 
 router.post('/run-code', authenticateToken, async (req: AuthenticatedRequest, res) => {
   const { code, language, stdin } = req.body;
@@ -204,8 +252,19 @@ router.post('/run-code', authenticateToken, async (req: AuthenticatedRequest, re
   const judge0Key = process.env.JUDGE0_API_KEY || '';
   const judge0Host = process.env.JUDGE0_API_HOST || 'judge0-ce.p.rapidapi.com';
 
-  const isRapidAPI = judge0Url.includes('rapidapi.com');
+  // Fallback immediately to Piston if the key is missing or set to placeholder
+  const isKeyInvalid = !judge0Key || judge0Key === 'YOUR_RAPIDAPI_KEY';
+  if (isKeyInvalid) {
+    try {
+      const fallbackResult = await runCodeWithPiston(code, language, stdin);
+      return res.json(fallbackResult);
+    } catch (err: any) {
+      console.error('Piston fallback failed:', err);
+      return res.status(500).json({ error: `Failed to compile/execute code: ${err.message}` });
+    }
+  }
 
+  const isRapidAPI = judge0Url.includes('rapidapi.com');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -238,6 +297,14 @@ router.post('/run-code', authenticateToken, async (req: AuthenticatedRequest, re
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Judge0 submission failed:', errorText);
+
+      // If key issue is returned by RapidAPI (401/403 or message), fallback to Piston
+      if (response.status === 401 || response.status === 403 || errorText.includes('Invalid API key') || errorText.includes('API key')) {
+        console.log('RapidAPI returned key auth error. Falling back to Piston API.');
+        const fallbackResult = await runCodeWithPiston(code, language, stdin);
+        return res.json(fallbackResult);
+      }
+
       return res.status(response.status).json({ error: `Code compiler returned error: ${errorText}` });
     }
 
@@ -257,7 +324,14 @@ router.post('/run-code', authenticateToken, async (req: AuthenticatedRequest, re
     res.json(output);
   } catch (error: any) {
     console.error('Error running code through Judge0 proxy:', error);
-    res.status(500).json({ error: `Failed to compile/execute code: ${error.message}` });
+    // If Judge0 fetch itself fails (e.g. network/dns error), fallback to Piston as last resort
+    try {
+      console.log('Network error contacting Judge0. Falling back to Piston API.');
+      const fallbackResult = await runCodeWithPiston(code, language, stdin);
+      return res.json(fallbackResult);
+    } catch (fallbackErr: any) {
+      res.status(500).json({ error: `Failed to compile/execute code: ${error.message} (Fallback failed: ${fallbackErr.message})` });
+    }
   }
 });
 
