@@ -73,7 +73,7 @@ export const Editor: React.FC<EditorProps> = ({
     // Bind local Yjs update events to socket emissions
     const handleLocalYjsUpdate = (update: Uint8Array, origin: any) => {
       if (origin === 'monaco') {
-        socket.emit('doc-update', Buffer.from(update));
+        socket.emit('doc-update', update);
       }
       if (onCodeChange) {
         onCodeChange(yText.toString());
